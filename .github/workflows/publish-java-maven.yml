@@ -1,0 +1,56 @@
+name: eLearningPro CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: dragon_elearning
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: KaruhurA1708
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Debug - Show directory structure
+      run: |
+        echo "Current directory:"
+        pwd
+        echo "Directory contents:"
+        ls -la
+        echo "Looking for pom.xml files:"
+        find . -name "pom.xml" -type f
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Build and test
+      run: |
+        # Change to the directory containing pom.xml
+        cd backend  # or whatever your subdirectory is called
+        mvn -B clean verify
+      env:
+        SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/dragon_elearning
+        SPRING_DATASOURCE_USERNAME: postgres
+        SPRING_DATASOURCE_PASSWORD: postgres
+        SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
