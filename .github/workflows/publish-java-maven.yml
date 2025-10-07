@@ -1,6 +1,6 @@
 
 
-name: eLearningPro CI/CD
+name: elearningpro CI/CD
 
 on:
   push:
