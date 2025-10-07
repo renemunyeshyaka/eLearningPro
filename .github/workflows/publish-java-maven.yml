@@ -1,13 +1,14 @@
-
-
-name: elearningpro CI/CD
+name: eLearningPro CI/CD
 
 on:
   push:
     branches: [ main, develop ]
 
+env:
+  DOCKER_IMAGE: ghcr.io/renemunyeshyaka/elearningpro
+
 jobs:
-  build-and-test:
+  build:
     runs-on: ubuntu-latest
     
     services:
@@ -44,27 +45,40 @@ jobs:
         SPRING_DATASOURCE_PASSWORD: KaruhurA1708
         SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
 
-  build-docker:
-    needs: build-and-test
+    - name: Upload JAR artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: elearningpro-app
+        path: target/*.jar
+
+  docker:
+    needs: build
     runs-on: ubuntu-latest
-    permissions:
-      packages: write
-      contents: read
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
     - name: Log in to GitHub Container Registry
       uses: docker/login-action@v3
       with:
         registry: ghcr.io
-        username: ${{ github.actor }}  # ← THIS IS CORRECT - DON'T CHANGE!
-        password: ${{ secrets.GITHUB_TOKEN }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.JAVA_TOKEN }}
 
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
         context: .
         push: true
-        tags: ghcr.io/${{ github.repository }}:latest
+        tags: |
+          ${{ env.DOCKER_IMAGE }}:latest
+          ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
+
+    - name: Display success
+      run: |
+        echo "✅ Docker image pushed successfully!"
+        echo "🐳 Image: ${{ env.DOCKER_IMAGE }}:latest"
